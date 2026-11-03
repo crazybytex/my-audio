@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>P001-这就是我</title>
+    <style>
+        /* 这里是页面样式，模仿了你截图里的清爽风格 */
+        body { background-color: #eaf6f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: #2c3e74; margin: 10px 0 5px 0; font-size: 24px; }
+        .header p { color: #7a8b99; font-size: 14px; margin: 0; }
+        .tag { background-color: #c1c79e; color: white; padding: 5px 15px; border-radius: 5px; font-size: 14px; display: inline-block; margin: 15px 0 10px 0; font-weight: bold; }
+        
+        .audio-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .audio-title { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .audio-size { color: #999; font-size: 12px; font-weight: normal; }
+        
+        /* 自定义进度条 */
+        input[type=range] { width: 100%; height: 4px; background: #e0e0e0; border-radius: 2px; outline: none; -webkit-appearance: none; margin-bottom: 10px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #333; border-radius: 50%; cursor: pointer; }
+        .time-display { display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-bottom: 15px; }
+        
+        /* 控制按钮区 */
+        .controls { display: flex; justify-content: space-between; align-items: center; }
+        .controls button { background: none; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .btn-speed { background: #f0f0f0 !important; padding: 5px 10px; border-radius: 5px; font-size: 14px; color: #333; font-weight: bold; }
+        .btn-skip { font-size: 12px; color: #666; position: relative; width: 40px; height: 40px; }
+        .btn-skip::after { content: "15"; position: absolute; font-size: 10px; font-weight: bold; }
+        .btn-play { width: 50px; height: 50px; background: #eaf6f6 !important; border-radius: 50%; color: #4CAF50; font-size: 24px; padding-left: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>P001-hello.dot</h1>
+        <p>少儿英语启蒙短文</p>
+    </div>
+
+    <div style="text-align: center;"><span class="tag">短文正文</span></div>
+    
+    <!-- 音频卡片 1 -->
+    <div class="audio-card">
+        <div class="audio-title">
+            <span>speechma_audio_nina低音_at_12_52_12_PM_on_November_3rd_2026.mp3</span>
+            <span class="audio-size">276KB</span>
+        </div>
+        <input type="range" class="seek-bar" value="0" min="0" max="100">
+        <div class="time-display">
+            <span class="current-time">00:00</span>
+            <span class="total-time">00:00</span>
+        </div>
+        <div class="controls">
+            <button class="btn-speed" onclick="changeSpeed(this)">倍速</button>
+            <button class="btn-skip" onclick="skip(this, -15)">↺</button>
+            <button class="btn-play" onclick="togglePlay(this)">▶</button>
+            <button class="btn-skip" onclick="skip(this, 15)">↻</button>
+            <div style="width: 40px;"></div> <!-- 占位保持对称 -->
+        </div>
+        <audio src="passage.mp3"></audio>
+    </div>
+
+    <div style="text-align: center;"><span class="tag">重点单词</span></div>
+
+    <!-- 音频卡片 2 -->
+    <div class="audio-card">
+        <div class="audio-title">
+            <span>speechma_audio_nina低音_at_12_52_12_PM_on_November_3rd_2026.mp3</span>
+            <span class="audio-size">85KB</span>
+        </div>
+        <input type="range" class="seek-bar" value="0" min="0" max="100">
+        <div class="time-display">
+            <span class="current-time">00:00</span>
+            <span class="total-time">00:00</span>
+        </div>
+        <div class="controls">
+            <button class="btn-speed" onclick="changeSpeed(this)">倍速</button>
+            <button class="btn-skip" onclick="skip(this, -15)">↺</button>
+            <button class="btn-play" onclick="togglePlay(this)">▶</button>
+            <button class="btn-skip" onclick="skip(this, 15)">↻</button>
+            <div style="width: 40px;"></div>
+        </div>
+        <audio src="word.mp3"></audio>
+    </div>
+
+    <!-- 底部提示 -->
+    <div style="text-align: center; color: #999; font-size: 12px; margin-top: 20px;">
+        <p>扫描二维码即可收听</p>
+    </div>
+
+    <script>
+        // 这里是小程序逻辑，让按钮生效
+        document.querySelectorAll('.audio-card').forEach(card => {
+            const audio = card.querySelector('audio');
+            const playBtn = card.querySelector('.btn-play');
+            const seekBar = card.querySelector('.seek-bar');
+            const currentTimeEl = card.querySelector('.current-time');
+            const totalTimeEl = card.querySelector('.total-time');
+            const speedBtn = card.querySelector('.btn-speed');
+            
+            let speeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+            let speedIndex = 0;
+
+            // 格式化时间
+            function formatTime(seconds) {
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            }
+
+            // 加载完毕获取总时长
+            audio.addEventListener('loadedmetadata', () => {
+                totalTimeEl.textContent = formatTime(audio.duration);
+            });
+
+            // 播放/暂停
+            playBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                    // 暂停其他的音频
+                    document.querySelectorAll('audio').forEach(a => {
+                        if(a !== audio) { a.pause(); a.parentElement.querySelector('.btn-play').textContent = '▶'; }
+                    });
+                    audio.play();
+                    playBtn.textContent = '⏸'; // 变成暂停符号
+                } else {
+                    audio.pause();
+                    playBtn.textContent = '▶';
+                }
+            });
+
+            // 进度条更新
+            audio.addEventListener('timeupdate', () => {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                seekBar.value = percent || 0;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            });
+
+            // 拖动进度条
+            seekBar.addEventListener('input', () => {
+                const time = (seekBar.value / 100) * audio.duration;
+                audio.currentTime = time;
+            });
+
+            // 快进/快退
+            card.querySelectorAll('.btn-skip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    let skipTime = parseInt(btn.getAttribute('onclick').match(/-?\d+/)[0]);
+                    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + skipTime));
+                });
+            });
+
+            // 倍速切换
+            speedBtn.addEventListener('click', () => {
+                speedIndex = (speedIndex + 1) % speeds.length;
+                audio.playbackRate = speeds[speedIndex];
+                speedBtn.textContent = speeds[speedIndex] + 'x';
+            });
+        });
+    </script>
+</body>
+</html>
